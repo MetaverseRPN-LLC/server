@@ -189,7 +189,7 @@ export class Channel extends BaseClass {
 
 	@Column()
 	default_thread_rate_limit_per_user: number = 0;
-	@Column()
+
 	/** Must be calculated Channel.calculatePosition */
 	position: number;
 
@@ -340,7 +340,7 @@ export class Channel extends BaseClass {
 		if (otherRecipientsUsers.length !== recipients.length) {
 			throw new HTTPError("Recipient/s not found");
 		}
-		**/
+		 **/
 
 		const type =
 			recipients.length > 1 ? ChannelType.GROUP_DM : ChannelType.DM;
