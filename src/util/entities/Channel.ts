@@ -44,6 +44,7 @@ import { Recipient } from "./Recipient";
 import { PublicUserProjection, User } from "./User";
 import { VoiceState } from "./VoiceState";
 import { Webhook } from "./Webhook";
+import { randomInt } from "node:crypto";
 
 export enum ChannelType {
 	GUILD_TEXT = 0, // a text channel within a guild
@@ -301,7 +302,7 @@ export class Channel extends BaseClass {
 
 		const position =
 			(channel.type === ChannelType.UNHANDLED ? 0 : channel.position) ||
-			0;
+			randomInt(1, 100);
 
 		channel = {
 			...channel,
