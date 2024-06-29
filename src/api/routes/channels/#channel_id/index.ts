@@ -31,7 +31,7 @@ import { Request, Response, Router } from "express";
 
 const router: Router = Router();
 // TODO: delete channel
-// TODO: Get channel
+// TODO: Get channel`
 
 router.get(
 	"/",
