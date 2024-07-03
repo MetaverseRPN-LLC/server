@@ -49,6 +49,7 @@ export enum PublicUserEnum {
 	premium_type,
 	theme_colors,
 	pronouns,
+	flags,
 }
 export type PublicUserKeys = keyof typeof PublicUserEnum;
 
