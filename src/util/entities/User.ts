@@ -54,7 +54,6 @@ export enum PublicUserEnum {
 export type PublicUserKeys = keyof typeof PublicUserEnum;
 
 export enum PrivateUserEnum {
-	flags,
 	mfa_enabled,
 	email,
 	phone,
