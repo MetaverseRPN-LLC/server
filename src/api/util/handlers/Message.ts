@@ -1,57 +1,57 @@
 /*
 	Spacebar: A FOSS re-implementation and extension of the Discord.com backend.
 	Copyright (C) 2023 Spacebar and Spacebar Contributors
-	
+
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published
 	by the Free Software Foundation, either version 3 of the License, or
 	(at your option) any later version.
-	
+
 	This program is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU Affero General Public License for more details.
-	
+
 	You should have received a copy of the GNU Affero General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import * as Sentry from "@sentry/node";
+import { EmbedHandlers } from "@spacebar/api";
 import {
+	Application,
+	Attachment,
 	Channel,
+	Config,
 	Embed,
+	EmbedCache,
 	emitEvent,
-	Guild,
-	Message,
-	MessageCreateEvent,
-	MessageUpdateEvent,
+	EVERYONE_MENTION,
 	getPermission,
 	getRights,
+	Guild,
+	HERE_MENTION,
+	Message,
+	MessageCreateEvent,
+	MessageCreateSchema,
+	MessageType,
+	MessageUpdateEvent,
+	Role,
+	ROLE_MENTION,
+	Sticker,
+	User,
 	//CHANNEL_MENTION,
 	USER_MENTION,
-	ROLE_MENTION,
-	Role,
-	EVERYONE_MENTION,
-	HERE_MENTION,
-	MessageType,
-	User,
-	Application,
 	Webhook,
-	Attachment,
-	Config,
-	Sticker,
-	MessageCreateSchema,
-	EmbedCache,
 } from "@spacebar/util";
 import { HTTPError } from "lambert-server";
 import { In } from "typeorm";
-import { EmbedHandlers } from "@spacebar/api";
-import * as Sentry from "@sentry/node";
 const allow_empty = false;
 // TODO: check webhook, application, system author, stickers
 // TODO: embed gifs/videos/images
 
 const LINK_REGEX =
-	/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/g;
+	/<?https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)>?/g;
 
 export async function handleMessage(opts: MessageOptions): Promise<Message> {
 	const channel = await Channel.findOneOrFail({
@@ -66,6 +66,7 @@ export async function handleMessage(opts: MessageOptions): Promise<Message> {
 		: undefined;
 	const message = Message.create({
 		...opts,
+		poll: opts.poll,
 		sticker_items: stickers,
 		guild_id: channel.guild_id,
 		channel_id: opts.channel_id,
@@ -138,7 +139,9 @@ export async function handleMessage(opts: MessageOptions): Promise<Message> {
 		!opts.content &&
 		!opts.embeds?.length &&
 		!opts.attachments?.length &&
-		!opts.sticker_ids?.length
+		!opts.sticker_ids?.length &&
+		!opts.poll &&
+		!opts.components?.length
 	) {
 		throw new HTTPError("Empty messages are not allowed", 50006);
 	}
@@ -213,6 +216,9 @@ export async function postHandleMessage(message: Message) {
 	const cachePromises = [];
 
 	for (const link of links) {
+		// Don't embed links in <>
+		if (link.startsWith("<") && link.endsWith(">")) continue;
+
 		const url = new URL(link);
 
 		const cached = await EmbedCache.findOne({ where: { url: link } });
